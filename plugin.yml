@@ -1,9 +1,6 @@
 name: Fe
-
-main: org.melonbrew.fe.Fe
-
+main: Fe
 version: ${project.version}
-
 load: startup
 
 commands:

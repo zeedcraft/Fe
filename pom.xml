@@ -3,13 +3,17 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.niccholaspage.Fe</groupId>
     <artifactId>Fe</artifactId>
-    <version>0.8.2</version>
+    <version>0.8.3</version>
     <name>Fe</name>
 
     <repositories>
         <repository>
             <id>spigot-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>Plugin Metrics</id>
+            <url>http://repo.mcstats.org/content/repositories/public</url>
         </repository>
         <repository>
             <id>vault-repo</id>
@@ -28,6 +32,12 @@
             <artifactId>VaultAPI</artifactId>
             <version>1.5</version>
             <type>jar</type>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mcstats.bukkit</groupId>
+            <artifactId>metrics</artifactId>
+            <version>R8-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -79,8 +89,15 @@
                             <artifactSet>
                                 <includes>
                                     <include>org.mongodb:mongo-java-driver</include>
+                                    <include>org.mcstats.*:*</include>
                                 </includes>
                             </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.mcstats</pattern>
+                                    <shadedPattern>io.loyloy.fe</shadedPattern>
+                                </relocation>
+                            </relocations>
                         </configuration>
                     </execution>
                 </executions>
