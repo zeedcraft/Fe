@@ -58,7 +58,6 @@ public class UUIDFetcher implements Callable<Map<String, UUID>>
         Map<String, UUID> uuidMap = new HashMap<String, UUID>();
 
         int requests = ( int ) Math.ceil( names.size() / PROFILES_PER_REQUEST );
-        int countee = 0;
 
         for( int i = 0; i < requests; i++ )
         {
@@ -78,13 +77,6 @@ public class UUIDFetcher implements Callable<Map<String, UUID>>
             {
                 Thread.sleep( 100L );
             }
-
-            if( countee >= 500 )
-            {
-                countee = 0;
-                Thread.sleep( 660000L );
-            }
-            countee++;
         }
         return uuidMap;
     }
