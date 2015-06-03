@@ -1,6 +1,6 @@
 package io.loyloy.fe;
 
-import io.loyloy.fe.database.Account;
+import io.loyloy.fe.API.Account;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import net.milkbowl.vault.economy.EconomyResponse.ResponseType;
@@ -16,18 +16,15 @@ import org.bukkit.plugin.Plugin;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VaultHandler implements Economy
+public class VaultHandler implements Economy, Listener
 {
     private final String name = "Fe";
-
     private Fe plugin;
 
     public VaultHandler( Fe plugin )
     {
         this.plugin = plugin;
-
-        Bukkit.getServer().getPluginManager().registerEvents( new EconomyServerListener(), plugin );
-
+        plugin.getServer().getPluginManager().registerEvents( ( Listener ) this, plugin );
         plugin.log( "Vault support enabled." );
     }
 
@@ -46,75 +43,69 @@ public class VaultHandler implements Economy
     @Override
     public String format( double amount )
     {
-        return plugin.getAPI().formatNoColor( amount );
+        return plugin.api.formatNoColor( amount );
     }
 
     @Override
     public String currencyNameSingular()
     {
-        return plugin.getAPI().getCurrencyMajorSingle();
+        return plugin.api.getCurrencyMajorSingle();
     }
 
     @Override
     public String currencyNamePlural()
     {
-        return plugin.getAPI().getCurrencyMajorMultiple();
+        return plugin.api.getCurrencyMajorMultiple();
     }
 
     @Override
     public double getBalance( String playerName )
     {
-        return getAccountBalance( playerName, null );
+        plugin.api.printDebugStackTrace();
+        final Account account = plugin.getDB().getAccount( playerName );
+        return account != null
+                ? account.getMoney()
+                : plugin.api.getDefaultHoldings();
     }
 
     @Override
     public double getBalance( OfflinePlayer offlinePlayer )
     {
-        return getAccountBalance( offlinePlayer.getName(), offlinePlayer.getUniqueId().toString() );
-    }
-
-    private double getAccountBalance( String playerName, String uuid )
-    {
-        Account account = plugin.getAPI().getAccount( playerName, uuid );
-
-        if( account == null )
-        {
-            return 0;
-        }
-
-        return account.getMoney();
+        plugin.api.printDebugStackTrace();
+        final Account account = plugin.getDB().getAccount( offlinePlayer.getUniqueId() );
+        return account != null
+                ? account.getMoney()
+                : plugin.api.getDefaultHoldings();
     }
 
     @Override
     public EconomyResponse withdrawPlayer( String playerName, double amount )
     {
-        return withdraw( playerName, null, amount );
+        final Account account = plugin.getDB().getAccount( playerName );
+        return withdraw( account, amount );
     }
 
     @Override
     public EconomyResponse withdrawPlayer( OfflinePlayer offlinePlayer, double amount )
     {
-        return withdraw( offlinePlayer.getName(), offlinePlayer.getUniqueId().toString(), amount );
+        final Account account = plugin.getDB().getAccount( offlinePlayer.getUniqueId() );
+        return withdraw( account, amount );
     }
 
-    private EconomyResponse withdraw( String playerName, String uuid, double amount )
+    private EconomyResponse withdraw( Account account, double amount )
     {
-        if( amount < 0 )
+        plugin.api.printDebugStackTrace();
+        if( amount < 0.0 )
         {
-            return new EconomyResponse( 0, 0, ResponseType.FAILURE, "Cannot withdraw negative funds" );
+            return new EconomyResponse( 0.0, 0.0, ResponseType.FAILURE, "Cannot withdraw negative funds" );
         }
-
-        Account account = plugin.getAPI().getAccount( playerName, uuid );
-
         if( account == null )
         {
-            return new EconomyResponse( 0, 0, ResponseType.FAILURE, "Account doesn't exist" );
+            return new EconomyResponse( 0.0, 0.0, ResponseType.FAILURE, "Account doesn't exist" );
         }
-
         if( account.has( amount ) )
         {
             account.withdraw( amount );
-
             return new EconomyResponse( amount, account.getMoney(), ResponseType.SUCCESS, "" );
         }
         else
@@ -126,31 +117,29 @@ public class VaultHandler implements Economy
     @Override
     public EconomyResponse depositPlayer( String playerName, double amount )
     {
-        return deposit( playerName, null, amount );
+        final Account account = plugin.getDB().getAccount( playerName );
+        return deposit( account, amount );
     }
 
     @Override
     public EconomyResponse depositPlayer( OfflinePlayer offlinePlayer, double amount )
     {
-        return deposit( offlinePlayer.getName(), offlinePlayer.getUniqueId().toString(), amount );
+        final Account account = plugin.getDB().getAccount( offlinePlayer.getUniqueId() );
+        return deposit( account, amount );
     }
 
-    private EconomyResponse deposit( String playerName, String uuid, double amount )
+    private EconomyResponse deposit( Account account, double amount )
     {
-        if( amount < 0 )
+        plugin.api.printDebugStackTrace();
+        if( amount < 0.0 )
         {
-            return new EconomyResponse( 0, 0, ResponseType.FAILURE, "Cannot deposit negative funds" );
+            return new EconomyResponse( 0.0, 0.0, ResponseType.FAILURE, "Cannot deposit negative funds" );
         }
-
-        Account account = plugin.getAPI().getAccount( playerName, uuid );
-
         if( account == null )
         {
-            return new EconomyResponse( 0, 0, ResponseType.FAILURE, "Account doesn't exist" );
+            return new EconomyResponse( 0.0, 0.0, ResponseType.FAILURE, "Account doesn't exist" );
         }
-
         account.deposit( amount );
-
         return new EconomyResponse( amount, account.getMoney(), ResponseType.SUCCESS, "" );
     }
 
@@ -169,73 +158,73 @@ public class VaultHandler implements Economy
     @Override
     public EconomyResponse createBank( String name, String player )
     {
-        return new EconomyResponse( 0, 0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
+        return new EconomyResponse( 0.0, 0.0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
     }
 
     @Override
     public EconomyResponse createBank( String name, OfflinePlayer offlinePlayer )
     {
-        return new EconomyResponse( 0, 0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
+        return new EconomyResponse( 0.0, 0.0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
     }
 
     @Override
     public EconomyResponse deleteBank( String name )
     {
-        return new EconomyResponse( 0, 0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
+        return new EconomyResponse( 0.0, 0.0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
     }
 
     @Override
     public EconomyResponse bankHas( String name, double amount )
     {
-        return new EconomyResponse( 0, 0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
+        return new EconomyResponse( 0.0, 0.0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
     }
 
     @Override
     public EconomyResponse bankWithdraw( String name, double amount )
     {
-        return new EconomyResponse( 0, 0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
+        return new EconomyResponse( 0.0, 0.0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
     }
 
     @Override
     public EconomyResponse bankDeposit( String name, double amount )
     {
-        return new EconomyResponse( 0, 0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
+        return new EconomyResponse( 0.0, 0.0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
     }
 
     @Override
     public EconomyResponse isBankOwner( String name, String playerName )
     {
-        return new EconomyResponse( 0, 0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
+        return new EconomyResponse( 0.0, 0.0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
     }
 
     @Override
     public EconomyResponse isBankOwner( String name, OfflinePlayer offlinePlayer )
     {
-        return new EconomyResponse( 0, 0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
+        return new EconomyResponse( 0.0, 0.0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
     }
 
     @Override
     public EconomyResponse isBankMember( String name, String playerName )
     {
-        return new EconomyResponse( 0, 0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
+        return new EconomyResponse( 0.0, 0.0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
     }
 
     @Override
     public EconomyResponse isBankMember( String name, OfflinePlayer offlinePlayer )
     {
-        return new EconomyResponse( 0, 0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
+        return new EconomyResponse( 0.0, 0.0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
     }
 
     @Override
     public EconomyResponse bankBalance( String name )
     {
-        return new EconomyResponse( 0, 0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
+        return new EconomyResponse( 0.0, 0.0, ResponseType.NOT_IMPLEMENTED, "Fe does not support bank accounts!" );
     }
 
     @Override
     public List<String> getBanks()
     {
-        return new ArrayList<String>();
+        return new ArrayList<>();
     }
 
     @Override
@@ -247,36 +236,31 @@ public class VaultHandler implements Economy
     @Override
     public boolean hasAccount( String playerName )
     {
-        return plugin.getAPI().accountExists( playerName, null );
+        plugin.api.printDebugStackTrace();
+        return plugin.api.accountExists( playerName );
     }
 
     @Override
     public boolean hasAccount( OfflinePlayer offlinePlayer )
     {
-        return plugin.getAPI().accountExists( offlinePlayer.getName(), offlinePlayer.getUniqueId().toString() );
+        plugin.api.printDebugStackTrace();
+        return plugin.api.accountExists( offlinePlayer.getUniqueId() );
     }
 
     @Override
     public boolean createPlayerAccount( String playerName )
     {
-        return createAccount( playerName, null );
+        plugin.api.printDebugStackTrace();
+        return plugin.getDB().createAccount( playerName ) != null;
     }
 
     @Override
     public boolean createPlayerAccount( OfflinePlayer offlinePlayer )
     {
-        return createAccount( offlinePlayer.getName(), offlinePlayer.getUniqueId().toString() );
-    }
-
-    private boolean createAccount( String playerName, String uuid )
-    {
-        if( hasAccount( playerName, uuid ) )
-        {
-            return false;
-        }
-
-        plugin.getAPI().updateAccount( playerName, uuid );
-
+        plugin.api.printDebugStackTrace();
+        Account account = plugin.getDB().createAccount( offlinePlayer.getUniqueId() );
+        account.setName( offlinePlayer.getName() );
+        plugin.getDB().saveAccount( account );
         return true;
     }
 
@@ -358,36 +342,27 @@ public class VaultHandler implements Economy
         return createPlayerAccount( offlinePlayer );
     }
 
-    public class EconomyServerListener implements Listener
+    @EventHandler( priority = EventPriority.MONITOR )
+    public void onPluginEnable( PluginEnableEvent event )
     {
-        @EventHandler( priority = EventPriority.MONITOR )
-        public void onPluginEnable( PluginEnableEvent event )
+        if( plugin == null )
         {
-            if( plugin == null )
+            final Plugin fe = Bukkit.getServer().getPluginManager().getPlugin( "Fe" );
+            if( fe != null && fe.isEnabled() )
             {
-                Plugin plugin = Bukkit.getServer().getPluginManager().getPlugin( "Fe" );
-
-                if( plugin != null && plugin.isEnabled() )
-                {
-                    VaultHandler.this.plugin = ( Fe ) plugin;
-
-                    VaultHandler.this.plugin.log( "Vault support enabled." );
-                }
+                plugin = ( Fe ) fe;
+                plugin.log( "Vault support enabled." );
             }
         }
+    }
 
-        @EventHandler( priority = EventPriority.MONITOR )
-        public void onPluginDisable( PluginDisableEvent event )
+    @EventHandler( priority = EventPriority.MONITOR )
+    public void onPluginDisable( PluginDisableEvent event )
+    {
+        if( plugin != null && event.getPlugin().getDescription().getName().equals( name ) )
         {
-            if( plugin != null )
-            {
-                if( event.getPlugin().getDescription().getName().equals( name ) )
-                {
-                    plugin = null;
-
-                    Bukkit.getLogger().info( "[Fe] Vault support disabled." );
-                }
-            }
+            plugin = null;
+            Bukkit.getLogger().info( "[Fe] Vault support disabled." );
         }
     }
 }

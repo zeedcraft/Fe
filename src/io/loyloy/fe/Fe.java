@@ -1,20 +1,17 @@
 package io.loyloy.fe;
 
-import io.loyloy.fe.database.Account;
-import io.loyloy.fe.database.Database;
-import io.loyloy.fe.database.databases.MongoDB;
-import io.loyloy.fe.database.databases.MySQLDB;
-import io.loyloy.fe.database.databases.SQLiteDB;
+import io.loyloy.fe.API.Account;
+import io.loyloy.fe.API.Database;
+import io.loyloy.fe.API.FeAPI;
+import io.loyloy.fe.Databases.MySQLDB;
+import io.loyloy.fe.Databases.SQLiteDB;
 import net.milkbowl.vault.economy.Economy;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
-import io.loyloy.fe.listeners.FePlayerListener;
 import org.mcstats.Metrics;
+import org.mcstats.Metrics.Graph;
+import org.mcstats.Metrics.Plotter;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,78 +20,109 @@ import java.util.Set;
 
 public class Fe extends JavaPlugin
 {
-    private final Set<Database> databases;
-    private API api;
+    public final FeAPI api = new FeAPI( this );
+    public final FeSettings settings = new FeSettings( this );
+    private final FeListener listener = new FeListener( this );
+    private final FeCommands commands = new FeCommands( this );
+    private final Set<Database> databases = new HashSet<>();
     private Database database;
 
-    public Fe()
+    @Override
+    public void onLoad()
     {
-        databases = new HashSet<Database>();
+        settings.onLoad();
+        Phrases.initialize( this );
     }
 
+    @Override
     public void onEnable()
     {
-        getDataFolder().mkdirs();
-
-        Phrase.init( this );
-
+        settings.onEnable();
+        Phrases.setupPhrases( new File( getDataFolder(), "phrases.yml" ) );
         databases.add( new MySQLDB( this ) );
         databases.add( new SQLiteDB( this ) );
-        databases.add( new MongoDB( this ) );
-
-        for( Database database : databases )
-        {
-            String name = database.getConfigName();
-
-            ConfigurationSection section = getConfig().getConfigurationSection( name );
-
-            if( section == null )
-            {
-                section = getConfig().createSection( name );
-            }
-
-            database.getConfigDefaults( section );
-
-            if( section.getKeys( false ).isEmpty() )
-            {
-                getConfig().set( name, null );
-            }
-        }
-
+        for( Database db : databases )
+            db.getConfigDefaults( db.getConfigSection() );
         getConfig().options().copyDefaults( true );
-
-        getConfig().options().header( "Fe Config - loyloy.io\n" +
-                "holdings - The amount of money that players will start out with\n" +
-                "prefix - The message prefix\n" +
-                "currency - The single and multiple names for the currency\n" +
-                "type - The type of database used (sqlite, mysql, or mongo)" );
-
         saveConfig();
-
-        api = new API( this );
-
         if( !setupDatabase() )
         {
+            getServer().getPluginManager().disablePlugin( this );
             return;
         }
-
-        getCommand( "fe" ).setExecutor( new FeCommand( this ) );
-
-        PluginManager pm = getServer().getPluginManager();
-        pm.registerEvents( new FePlayerListener( this ), this );
-
+        getCommand( "fe" ).setExecutor( commands );
+        getServer().getPluginManager().registerEvents( listener, this );
         setupVault();
-
         loadMetrics();
-
-        reloadConfig();
-
-        // Auto Clean On Startup
+        // Load all accounts
+        database.loadAccounts();
+        // Autoclean on startup
         if( api.isAutoClean() )
         {
             api.clean();
-            log( Phrase.ACCOUNT_CLEANED );
+            log( Phrases.ACCOUNT_CLEANED );
         }
+    }
+
+    private boolean setupDatabase()
+    {
+        String type = settings.getDatabase();
+        database = null;
+        for( Database db : databases )
+            if( type.equalsIgnoreCase( db.getConfigName() ) )
+            {
+                this.database = db;
+                break;
+            }
+        if( database == null )
+        {
+            log( Phrases.DATABASE_TYPE_DOES_NOT_EXIST );
+            return false;
+        }
+        log( "Using " + database.getName() );
+        if( !database.initialize() )
+        {
+            log( Phrases.DATABASE_FAILURE_DISABLE );
+            setEnabled( false );
+            return false;
+        }
+        return true;
+    }
+
+    private void setupVault()
+    {
+        if( getServer().getPluginManager().getPlugin( "Vault" ) != null )
+        {
+            getServer().getServicesManager().register( Economy.class, new VaultHandler( this ), this, ServicePriority.Highest );
+        }
+    }
+
+    @Override
+    public void onDisable()
+    {
+        getServer().getScheduler().cancelTasks( this );
+        getDB().close();
+        getServer().getServicesManager().unregisterAll( this );
+    }
+
+    public FeAPI getAPI()
+    {
+        return api;
+    }
+
+    public Database getDB()
+    {
+        return database;
+    }
+
+    public Database findDB( String targetName )
+    {
+        for( Database db : databases )
+            if( db.getConfigName().equals( targetName ) )
+            {
+                return db;
+            }
+        return null;
     }
 
     public void log( String message )
@@ -102,169 +130,33 @@ public class Fe extends JavaPlugin
         getLogger().info( message );
     }
 
-    public void onDisable()
-    {
-        getServer().getScheduler().cancelTasks( this );
-
-        getFeDatabase().close();
-    }
-
-    public void log( Phrase phrase, String... args )
+    public void log( Phrases phrase, String... args )
     {
         log( phrase.parse( args ) );
     }
 
-    public Database getFeDatabase()
-    {
-        return database;
-    }
-
-    public boolean addDatabase( Database database )
-    {
-        return databases.add( database );
-    }
-
-    public Set<Database> getDatabases()
-    {
-        return new HashSet<Database>( databases );
-    }
-
-    public API getAPI()
-    {
-        return api;
-    }
-
-    private boolean setupDatabase()
-    {
-        String type = getConfig().getString( "type" );
-
-        database = null;
-
-        for( Database database : databases )
-        {
-            if( type.equalsIgnoreCase( database.getConfigName() ) )
-            {
-                this.database = database;
-
-                break;
-            }
-        }
-
-        if( database == null )
-        {
-            log( Phrase.DATABASE_TYPE_DOES_NOT_EXIST );
-
-            return false;
-        }
-
-        if( !database.init() )
-        {
-            log( Phrase.DATABASE_FAILURE_DISABLE );
-
-            setEnabled( false );
-
-            return false;
-        }
-
-        return true;
-    }
-
-    private void setupPhrases()
-    {
-        File phrasesFile = new File( getDataFolder(), "phrases.yml" );
-
-        for( Phrase phrase : Phrase.values() )
-        {
-            phrase.reset();
-        }
-
-        if( !phrasesFile.exists() )
-        {
-            return;
-        }
-
-        YamlConfiguration phrasesConfig = YamlConfiguration.loadConfiguration( phrasesFile );
-
-        for( Phrase phrase : Phrase.values() )
-        {
-            String phraseConfigName = phrase.getConfigName();
-
-            String phraseMessage = phrasesConfig.getString( phraseConfigName );
-
-            if( phraseMessage == null )
-            {
-                phraseMessage = phrase.parse();
-            }
-
-            phrase.setMessage( phraseMessage );
-        }
-    }
-
-    public void reloadConfig()
-    {
-        super.reloadConfig();
-
-        String oldCurrencySingle = getConfig().getString( "currency.single" );
-
-        String oldCurrencyMultiple = getConfig().getString( "currency.multiple" );
-
-        if( oldCurrencySingle != null )
-        {
-            getConfig().set( "currency.major.single", oldCurrencySingle );
-
-            getConfig().set( "currency.single", null );
-        }
-
-        if( oldCurrencyMultiple != null )
-        {
-            getConfig().set( "currency.major.multiple", oldCurrencyMultiple );
-
-            getConfig().set( "currency.multiple", null );
-        }
-
-        if( !getConfig().isSet( "autoclean" ) )
-        {
-            getConfig().set( "autoclean", true );
-        }
-
-        // Temporarily remove cache and updates.
-        if( getConfig().isSet( "cacheaccounts" ) )
-        {
-            getConfig().set( "cacheaccounts", null );
-        }
-        if( getConfig().getBoolean( "updatecheck" ) )
-        {
-            getConfig().set( "updatecheck", null );
-        }
-
-        setupPhrases();
-
-        saveConfig();
-    }
-
-    @SuppressWarnings( "deprecation" )
     public Account getShortenedAccount( String name )
     {
-        Account account = getAPI().getAccount( name, null );
-
+        Account account = api.getAccount( name );
         if( account == null )
         {
-            Player player = getServer().getPlayer( name );
-
+            final Player player = getServer().getPlayer( name );
             if( player != null )
             {
-                account = getAPI().getAccount( player.getName(), null );
+                account = api.getAccount( player.getUniqueId().toString() );
+                if( account == null )
+                {
+                    account = api.getAccount( player.getName() );
+                }
             }
         }
-
         return account;
     }
 
     public String getMessagePrefix()
     {
-        String third = Phrase.TERTIARY_COLOR.parse();
-
-        return third + "[" + Phrase.PRIMARY_COLOR.parse() + "$1" + third + "] " + Phrase.SECONDARY_COLOR.parse();
+        String third = Phrases.TERTIARY_COLOR.parse();
+        return third + "[" + Phrases.PRIMARY_COLOR.parse() + "$1" + third + "] " + Phrases.SECONDARY_COLOR.parse();
     }
 
     public String getEqualMessage( String inBetween, int length )
@@ -275,23 +167,16 @@ public class Fe extends JavaPlugin
     public String getEqualMessage( String inBetween, int length, int length2 )
     {
         String equals = getEndEqualMessage( length );
-
         String end = getEndEqualMessage( length2 );
-
-        String third = Phrase.TERTIARY_COLOR.parse();
-
-        return equals + third + "[" + Phrase.PRIMARY_COLOR.parse() + inBetween + third + "]" + end;
+        String third = Phrases.TERTIARY_COLOR.parse();
+        return equals + third + "[" + Phrases.PRIMARY_COLOR.parse() + inBetween + third + "]" + end;
     }
 
     public String getEndEqualMessage( int length )
     {
-        String message = Phrase.SECONDARY_COLOR.parse() + "";
-
+        String message = Phrases.SECONDARY_COLOR.parse() + "";
         for( int i = 0; i < length; i++ )
-        {
             message += "=";
-        }
-
         return message;
     }
 
@@ -300,61 +185,42 @@ public class Fe extends JavaPlugin
         try
         {
             Metrics metrics = new Metrics( this );
-
-            Metrics.Graph databaseGraph = metrics.createGraph( "Database Engine" );
-
-            databaseGraph.addPlotter( new Metrics.Plotter( getFeDatabase().getName() )
+            final Graph databaseGraph = metrics.createGraph( "Database Engine" );
+            databaseGraph.addPlotter( new Plotter( getDB().getName() )
             {
+                @Override
                 public int getValue()
                 {
                     return 1;
                 }
             } );
-
-            Metrics.Graph defaultHoldings = metrics.createGraph( "Default Holdings" );
-
-            defaultHoldings.addPlotter( new Metrics.Plotter( getAPI().getDefaultHoldings() + "" )
+            final Graph defaultHoldings = metrics.createGraph( "Default Holdings" );
+            defaultHoldings.addPlotter( new Plotter( Double.toString( api.getDefaultHoldings() ) )
             {
+                @Override
                 public int getValue()
                 {
                     return 1;
                 }
             } );
-
-            Metrics.Graph maxHoldings = metrics.createGraph( "Max Holdings" );
-
-            String maxHolding = getAPI().getMaxHoldings() + "";
-
-            if( getAPI().getMaxHoldings() == -1 )
+            final Graph maxHoldings = metrics.createGraph( "Max Holdings" );
+            String maxHolding = Double.toString( api.getMaxHoldings() );
+            if( api.getMaxHoldings() == -1 )
             {
                 maxHolding = "Unlimited";
             }
-
-            maxHoldings.addPlotter( new Metrics.Plotter( maxHolding )
+            maxHoldings.addPlotter( new Plotter( maxHolding )
             {
+                @Override
                 public int getValue()
                 {
                     return 1;
                 }
             } );
-
             metrics.start();
         }
         catch( IOException e )
         {
-
         }
-    }
-
-    private void setupVault()
-    {
-        Plugin vault = getServer().getPluginManager().getPlugin( "Vault" );
-
-        if( vault == null )
-        {
-            return;
-        }
-
-        getServer().getServicesManager().register( Economy.class, new VaultHandler( this ), this, ServicePriority.Highest );
     }
 }

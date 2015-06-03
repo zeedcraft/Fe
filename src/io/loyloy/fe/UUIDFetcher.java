@@ -1,24 +1,3 @@
-/*
- * Copyright (c) 2015 Nate Mortensen
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
 package io.loyloy.fe;
 
 import com.google.common.collect.ImmutableList;
@@ -37,7 +16,8 @@ import java.util.concurrent.Callable;
 public class UUIDFetcher implements Callable<Map<String, UUID>>
 {
     private static final double PROFILES_PER_REQUEST = 100;
-    private static final String PROFILE_URL = "https://api.mojang.com/profiles/minecraft";
+    private static final String PROFILE_URL_ORIGINAL = "https://api.mojang.com/profiles/minecraft";
+    private String PROFILE_URL = PROFILE_URL_ORIGINAL;
     private final JSONParser jsonParser = new JSONParser();
     private final List<String> names;
     private final boolean rateLimiting;
@@ -53,12 +33,16 @@ public class UUIDFetcher implements Callable<Map<String, UUID>>
         this( names, true );
     }
 
+    public void setNewFetchMethodURL( String newURL )
+    {
+        this.PROFILE_URL = ( newURL != null && !newURL.isEmpty() ) ? newURL : PROFILE_URL_ORIGINAL;
+    }
+
+    @Override
     public Map<String, UUID> call() throws Exception
     {
-        Map<String, UUID> uuidMap = new HashMap<String, UUID>();
-
+        Map<String, UUID> uuidMap = new HashMap<>();
         int requests = ( int ) Math.ceil( names.size() / PROFILES_PER_REQUEST );
-
         for( int i = 0; i < requests; i++ )
         {
             HttpURLConnection connection = createConnection();
@@ -83,13 +67,14 @@ public class UUIDFetcher implements Callable<Map<String, UUID>>
 
     private static void writeBody( HttpURLConnection connection, String body ) throws Exception
     {
-        OutputStream stream = connection.getOutputStream();
-        stream.write( body.getBytes() );
-        stream.flush();
-        stream.close();
+        try( OutputStream stream = connection.getOutputStream() )
+        {
+            stream.write( body.getBytes() );
+            stream.flush();
+        }
     }
 
-    private static HttpURLConnection createConnection() throws Exception
+    private HttpURLConnection createConnection() throws Exception
     {
         URL url = new URL( PROFILE_URL );
         HttpURLConnection connection = ( HttpURLConnection ) url.openConnection();
