@@ -1,5 +1,5 @@
 name: Fe
-main: Fe
+main: io.loyloy.fe.Fe
 version: ${project.version}
 load: startup
 

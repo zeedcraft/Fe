@@ -3,6 +3,8 @@ package io.loyloy.fe.database;
 import io.loyloy.fe.API;
 import io.loyloy.fe.Fe;
 
+import java.util.HashMap;
+
 public class Account
 {
     private final Fe plugin;
@@ -61,7 +63,14 @@ public class Account
             return money;
         }
 
-        String money_string = database.loadAccountData( name, uuid ).get( "money" );
+        HashMap<String,String> data = database.loadAccountData( name, uuid );
+
+        if( data == null )
+        {
+            return 0D;
+        }
+
+        String money_string = data.get( "money" );
         Double money;
 
         try

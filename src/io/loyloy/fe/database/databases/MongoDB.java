@@ -6,8 +6,8 @@ import io.loyloy.fe.Fe;
 import io.loyloy.fe.database.Account;
 import io.loyloy.fe.database.Database;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -32,14 +32,17 @@ public class MongoDB extends Database
 
         try
         {
-            mongoClient = new MongoClient( getConfigSection().getString( "host" ), getConfigSection().getInt( "port" ) );
+            ServerAddress address = new ServerAddress( getConfigSection().getString( "host" ), getConfigSection().getInt( "port" ) );
+            MongoCredential credential = MongoCredential.createCredential( getConfigSection().getString( "user" ), getConfigSection().getString( "database" ), getConfigSection().getString( "password" ).toCharArray() );
+
+            mongoClient = new MongoClient( address, Arrays.asList(credential) );
         }
-        catch( UnknownHostException e )
+        catch( Exception e )
         {
             return false;
         }
 
-        if( getDatabase() == null || !getDatabase().isAuthenticated() )
+        if( getDatabase() == null )
         {
             return false;
         }
@@ -60,8 +63,6 @@ public class MongoDB extends Database
     private DB getDatabase()
     {
         DB database = mongoClient.getDB( getConfigSection().getString( "database" ) );
-
-        database.authenticate( getConfigSection().getString( "user" ), getConfigSection().getString( "password" ).toCharArray() );
 
         return database;
     }
@@ -140,6 +141,11 @@ public class MongoDB extends Database
 
         BasicDBObject query = ( BasicDBObject ) collection.findOne();
 
+        if( query == null )
+        {
+            return 0;
+        }
+
         return query.getInt( "version", 0 );
     }
 
@@ -148,7 +154,8 @@ public class MongoDB extends Database
     {
         DBCollection collection = getDatabase().getCollection( VERSION_COLLECTION );
 
-        collection.findAndRemove( new BasicDBObject() );
+        collection.drop();
+        collection.insert( new BasicDBObject( "version", version ) );
     }
 
     @Override

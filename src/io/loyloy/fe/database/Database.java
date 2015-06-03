@@ -209,6 +209,11 @@ public abstract class Database
 
         HashMap<String, String> data = loadAccountData( name, uuid );
 
+        if( data == null )
+        {
+            return null;
+        }
+
         String money_string = data.get( "money" );
         Double data_money;
 
