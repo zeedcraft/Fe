@@ -15,6 +15,10 @@
             <id>vault-repo</id>
             <url>http://nexus.theyeticave.net/content/repositories/pub_releases</url>
         </repository>
+        <repository>
+            <id>Plugin Metrics</id>
+            <url>http://repo.mcstats.org/content/repositories/public</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -31,6 +35,7 @@
             <scope>compile</scope>
         </dependency>
     </dependencies>
+
     <build>
         <defaultGoal>clean package install</defaultGoal>
         <finalName>${project.name}</finalName>
@@ -46,19 +51,49 @@
             </resource>
         </resources>
         <plugins>
+
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
+                <version>3.3</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>1.7</source>
+                    <target>1.7</target>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.1</version>
+                <version>2.6</version>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                    <artifactSet>
+                        <includes>
+                            <include>org.mcstats.*:*</include>
+                        </includes>
+                    </artifactSet>
+                    <relocations>
+                        <relocation>
+                            <pattern>org.mcstats</pattern>
+                            <shadedPattern>io.loyloy.fe</shadedPattern>
+                        </relocation>
+                    </relocations>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 </project>
