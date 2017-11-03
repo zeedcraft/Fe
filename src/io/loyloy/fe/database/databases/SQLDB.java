@@ -98,7 +98,6 @@ public abstract class SQLDB extends Database
         super.init();
 
         return checkConnection();
-
     }
 
     public boolean checkConnection()
@@ -243,7 +242,7 @@ public abstract class SQLDB extends Database
 
         String sql = "SELECT * FROM " + accountsName + " ORDER BY money DESC limit " + size;
 
-        List<Account> topAccounts = new ArrayList<Account>();
+        List<Account> topAccounts = new ArrayList<>();
 
         try
         {
@@ -306,7 +305,7 @@ public abstract class SQLDB extends Database
 
             ResultSet set = statement.executeQuery();
 
-            HashMap<String, String> data = new HashMap<String, String>();
+            HashMap<String, String> data = new HashMap<>();
 
             while( set.next() )
             {

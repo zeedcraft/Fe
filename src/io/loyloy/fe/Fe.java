@@ -13,10 +13,8 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import io.loyloy.fe.listeners.FePlayerListener;
-import org.mcstats.Metrics;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,7 +26,7 @@ public class Fe extends JavaPlugin
 
     public Fe()
     {
-        databases = new HashSet<Database>();
+        databases = new HashSet<>();
     }
 
     public void onEnable()
@@ -93,16 +91,16 @@ public class Fe extends JavaPlugin
         }
     }
 
-    public void log( String message )
-    {
-        getLogger().info( message );
-    }
-
     public void onDisable()
     {
         getServer().getScheduler().cancelTasks( this );
 
         getFeDatabase().close();
+    }
+
+    public void log( String message )
+    {
+        getLogger().info( message );
     }
 
     public void log( Phrase phrase, String... args )
@@ -122,7 +120,7 @@ public class Fe extends JavaPlugin
 
     public Set<Database> getDatabases()
     {
-        return new HashSet<Database>( databases );
+        return new HashSet<>( databases );
     }
 
     public API getAPI()
@@ -196,43 +194,43 @@ public class Fe extends JavaPlugin
         }
     }
 
-    private void loadMetrics()
-    {
-        try
-        {
-            Metrics metrics = new Metrics(this);
-
-            Metrics.Graph graphDatabaseType = metrics.createGraph( "Database Type" );
-
-            graphDatabaseType.addPlotter( new Metrics.Plotter( DATABASE.getConfigName() ) {
-                @Override
-                public int getValue() {
-                    return 1;
-                }
-            } );
-
-            Metrics.Graph graphTagAPI = metrics.createGraph( "TagAPI" );
-
-            String graphTagAPIValue = "No";
-            if( TAGAPI )
-            {
-                graphTagAPIValue = "Yes";
-            }
-
-            graphTagAPI.addPlotter( new Metrics.Plotter( graphTagAPIValue ) {
-                @Override
-                public int getValue() {
-                    return 1;
-                }
-            } );
-
-            metrics.start();
-        }
-        catch (IOException e)
-        {
-            // Failed to submit the stats :-(
-        }
-    }
+//    private void loadMetrics()
+//    {
+//        try
+//        {
+//            Metrics metrics = new Metrics(this);
+//
+//            Metrics.Graph graphDatabaseType = metrics.createGraph( "Database Type" );
+//
+//            graphDatabaseType.addPlotter( new Metrics.Plotter( DATABASE.getConfigName() ) {
+//                @Override
+//                public int getValue() {
+//                    return 1;
+//                }
+//            } );
+//
+//            Metrics.Graph graphTagAPI = metrics.createGraph( "TagAPI" );
+//
+//            String graphTagAPIValue = "No";
+//            if( TAGAPI )
+//            {
+//                graphTagAPIValue = "Yes";
+//            }
+//
+//            graphTagAPI.addPlotter( new Metrics.Plotter( graphTagAPIValue ) {
+//                @Override
+//                public int getValue() {
+//                    return 1;
+//                }
+//            } );
+//
+//            metrics.start();
+//        }
+//        catch (IOException e)
+//        {
+//            // Failed to submit the stats :-(
+//        }
+//    }
 
     public void reloadConfig()
     {

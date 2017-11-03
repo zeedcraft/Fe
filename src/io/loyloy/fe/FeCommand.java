@@ -17,7 +17,7 @@ public class FeCommand implements CommandExecutor
 
     public FeCommand( Fe plugin )
     {
-        commands = new ArrayList<SubCommand>();
+        commands = new ArrayList<>();
 
         commands.add( new BalanceCommand( plugin ) );
         commands.add( new SendCommand( plugin ) );
