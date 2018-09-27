@@ -52,7 +52,7 @@ public abstract class SQLCore extends Database
                 HashMap<String,String> row = new HashMap<>( columns );
                 for( int i = 1; i <= columns; ++i )
                 {
-                    row.put( md.getColumnName( i ), set.getObject( i ).toString() );
+                    row.put( md.getColumnName( i ), nullSafeToString( set.getObject( i ) ) );
                 }
                 list.add( row );
             }
@@ -116,5 +116,15 @@ public abstract class SQLCore extends Database
         HashMap<String,String> rowOne = data.get(0);
 
         return rowOne.get( column );
+    }
+
+    public static String nullSafeToString( Object obj )
+    {
+        if( obj == null )
+        {
+            return null;
+        }
+
+        return obj.toString();
     }
 }

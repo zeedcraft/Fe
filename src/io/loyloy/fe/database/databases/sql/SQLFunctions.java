@@ -17,6 +17,9 @@ public abstract class SQLFunctions extends SQLCore
     private String accountsColumnMoney  = "money";
     private String accountsColumnUUID   = "uuid";
 
+    private static final String SYSTEM_NAME_MONEY = "money";
+    private static final String SYSTEM_NAME_USER = "name";
+
     public SQLFunctions( Fe plugin )
     {
         super( plugin );
@@ -53,25 +56,25 @@ public abstract class SQLFunctions extends SQLCore
 
     private void updateTables()
     {
-        query( "CREATE TABLE IF NOT EXISTS " + accountsName + " (" + accountsColumnUser + " varchar(64) NOT NULL, " + accountsColumnUUID + " varchar(36), " + accountsColumnMoney + " double NOT NULL)", false );
-        query( "CREATE TABLE IF NOT EXISTS " + versionName + " (version int NOT NULL)", false );
+        query( "CREATE TABLE IF NOT EXISTS " + accountsName + " (" + accountsColumnUser + " varchar(64) NOT NULL, " + accountsColumnUUID + " varchar(36), " + accountsColumnMoney + " double NOT NULL);", false );
+        query( "CREATE TABLE IF NOT EXISTS " + versionName + " (version int NOT NULL);", false );
     }
 
     public int getVersion()
     {
-        String versionString = getOnlyValue( query( "SELECT * from " + versionName, true ), "version" );
+        String versionString = getOnlyValue( query( "SELECT * from " + versionName + ";", true ), "version" );
         return Integer.parseInt( versionString );
     }
 
     public void setVersion( int version )
     {
-        query( "DELETE FROM " + versionName, false );
-        query( "INSERT INTO " + versionName + " (version) VALUES (" + version + ")", false );
+        query( "DELETE FROM " + versionName + ";", false );
+        query( "INSERT INTO " + versionName + " (version) VALUES (" + version + ");", false );
     }
 
     public List<Account> loadTopAccounts( int size )
     {
-        String sql = "SELECT * FROM " + accountsName + " ORDER BY money DESC limit " + size;
+        String sql = "SELECT * FROM " + accountsName + " ORDER BY money DESC limit " + size + ";";
         return convertToAccounts( query( sql, true ) );
     }
 
@@ -83,18 +86,23 @@ public abstract class SQLFunctions extends SQLCore
 
     public HashMap<String, String> loadAccountData( String name, String uuid )
     {
-        String sql = "SELECT * FROM " + accountsName + " WHERE UPPER(" + ( uuid != null ? accountsColumnUUID : accountsColumnUser ) + ") LIKE UPPER(" + (uuid != null ? uuid : name) + ")";
+        String sql = "SELECT * FROM " + accountsName + " WHERE UPPER(" + ( uuid != null ? accountsColumnUUID : accountsColumnUser ) + ") LIKE UPPER('" + (uuid != null ? uuid : name) + "');";
         HashMap<String,String> accountData = getFirstRow( query( sql, true ) );
 
-        //Filter out custom names on tables
-        if( !accountsColumnMoney.equals( "money" ) )
+        if( accountData == null )
         {
-            accountData.put( "money", accountData.get( accountsColumnMoney ) );
+            return new HashMap<>();
+        }
+
+        //Filter out custom names on tables
+        if( !accountsColumnMoney.equals( SYSTEM_NAME_MONEY ) )
+        {
+            accountData.put( SYSTEM_NAME_MONEY, accountData.get( accountsColumnMoney ) );
             accountData.remove( accountsColumnMoney );
         }
-        if( !accountsColumnUser.equals( "name" ) )
+        if( !accountsColumnUser.equals( SYSTEM_NAME_USER ) )
         {
-            accountData.put( "name", accountData.get( accountsColumnUser ) );
+            accountData.put( SYSTEM_NAME_USER, accountData.get( accountsColumnUser ) );
             accountData.remove( accountsColumnUser );
         }
 
@@ -105,22 +113,36 @@ public abstract class SQLFunctions extends SQLCore
     {
         super.removeAccount( name, uuid );
 
-        String sql = "DELETE FROM " + accountsName + " WHERE UPPER(" + ( uuid != null ? accountsColumnUUID : accountsColumnUser ) + ") LIKE UPPER(" + (uuid != null ? uuid : name) + ");";
+        String sql = "DELETE FROM " + accountsName + " WHERE UPPER(" + ( uuid != null ? accountsColumnUUID : accountsColumnUser ) + ") LIKE UPPER('" + (uuid != null ? uuid : name) + "');";
         query( sql, false );
     }
 
     protected void saveAccount( String name, String uuid, double money )
     {
-        String selectSQL = "SELECT uuid FROM " + accountsName + " WHERE " + accountsColumnUUID + " = '" + uuid + "';";
+        String selectSQL = "SELECT * FROM " + accountsName + " WHERE UPPER(" + ( uuid != null ? accountsColumnUUID : accountsColumnUser ) + ") LIKE UPPER('" + (uuid != null ? uuid : name) + "');";
         String saveSQL;
 
         if( getFirstRow( query( selectSQL, true ) ) == null )
         {
-            saveSQL = "INSERT INTO " + accountsName + " (" + accountsColumnUser + ", " + accountsColumnUUID + ", " + accountsColumnMoney + ") VALUES (" + name + ", " + uuid + ", " + money + ");";
+            if( uuid == null )
+            {
+                saveSQL = "INSERT INTO " + accountsName + " (" + accountsColumnUser + ", " + accountsColumnMoney + ") VALUES ('" + name + "', " + money + ");";
+            }
+            else
+            {
+                saveSQL = "INSERT INTO " + accountsName + " (" + accountsColumnUser + ", " + accountsColumnUUID + ", " + accountsColumnMoney + ") VALUES ('" + name + "', '" + uuid + "', " + money + ");";
+            }
         }
         else
         {
-            saveSQL = "UPDATE " + accountsName + " SET " + accountsColumnUser + " = " + name + ", " + accountsColumnUUID + " = " + uuid + ", "+ accountsColumnMoney + " = " + money + ";";
+            if( uuid == null )
+            {
+                saveSQL = "UPDATE " + accountsName + " SET " + accountsColumnUser + " = '" + name + "', " + accountsColumnMoney + " = " + money + " WHERE UPPER(" + accountsColumnUser + ") LIKE UPPER('" + name + "');";
+            }
+            else
+            {
+                saveSQL = "UPDATE " + accountsName + " SET " + accountsColumnUser + " = '" + name + "', " + accountsColumnUUID + " = '" + uuid + "', "+ accountsColumnMoney + " = " + money + " WHERE UPPER(" + accountsColumnUUID + ") LIKE UPPER('" + uuid + "');";
+            }
         }
 
         query( saveSQL, false );
@@ -143,6 +165,11 @@ public abstract class SQLFunctions extends SQLCore
     public List<Account> convertToAccounts( ArrayList<HashMap<String,String>> data )
     {
         List<Account> accounts = new ArrayList<>();
+
+        if( data == null || data.size() == 0 )
+        {
+            return accounts;
+        }
 
         for( HashMap<String,String> row : data )
         {
