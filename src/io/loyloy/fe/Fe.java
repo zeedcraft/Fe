@@ -2,8 +2,8 @@ package io.loyloy.fe;
 
 import io.loyloy.fe.database.Account;
 import io.loyloy.fe.database.Database;
-import io.loyloy.fe.database.databases.MySQLDB;
-import io.loyloy.fe.database.databases.SQLiteDB;
+import io.loyloy.fe.database.databases.sql.MySQL;
+import io.loyloy.fe.database.databases.sql.SQLite;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -31,12 +31,10 @@ public class Fe extends JavaPlugin
 
     public void onEnable()
     {
-        getDataFolder().mkdirs();
-
         Phrase.init( this );
 
-        databases.add( new MySQLDB( this ) );
-        databases.add( new SQLiteDB( this ) );
+        databases.add( new MySQL( this ) );
+        databases.add( new SQLite( this ) );
 
         for( Database database : databases )
         {
@@ -59,7 +57,7 @@ public class Fe extends JavaPlugin
 
         getConfig().options().copyDefaults( true );
 
-        getConfig().options().header( "Fe Config - loyloy.io\n" +
+        getConfig().options().header( "Fe Config - nonit.me\n" +
                 "holdings - The amount of money that players will start out with\n" +
                 "prefix - The message prefix\n" +
                 "currency - The single and multiple names for the currency\n" +
@@ -194,44 +192,6 @@ public class Fe extends JavaPlugin
         }
     }
 
-//    private void loadMetrics()
-//    {
-//        try
-//        {
-//            Metrics metrics = new Metrics(this);
-//
-//            Metrics.Graph graphDatabaseType = metrics.createGraph( "Database Type" );
-//
-//            graphDatabaseType.addPlotter( new Metrics.Plotter( DATABASE.getConfigName() ) {
-//                @Override
-//                public int getValue() {
-//                    return 1;
-//                }
-//            } );
-//
-//            Metrics.Graph graphTagAPI = metrics.createGraph( "TagAPI" );
-//
-//            String graphTagAPIValue = "No";
-//            if( TAGAPI )
-//            {
-//                graphTagAPIValue = "Yes";
-//            }
-//
-//            graphTagAPI.addPlotter( new Metrics.Plotter( graphTagAPIValue ) {
-//                @Override
-//                public int getValue() {
-//                    return 1;
-//                }
-//            } );
-//
-//            metrics.start();
-//        }
-//        catch (IOException e)
-//        {
-//            // Failed to submit the stats :-(
-//        }
-//    }
-
     public void reloadConfig()
     {
         super.reloadConfig();
@@ -274,7 +234,6 @@ public class Fe extends JavaPlugin
         saveConfig();
     }
 
-    @SuppressWarnings( "deprecation" )
     public Account getShortenedAccount( String name )
     {
         Account account = getAPI().getAccount( name, null );
@@ -317,14 +276,14 @@ public class Fe extends JavaPlugin
 
     public String getEndEqualMessage( int length )
     {
-        String message = Phrase.SECONDARY_COLOR.parse() + "";
+        StringBuilder message = new StringBuilder( Phrase.SECONDARY_COLOR.parse() + "" );
 
         for( int i = 0; i < length; i++ )
         {
-            message += "=";
+            message.append( '=' );
         }
 
-        return message;
+        return message.toString();
     }
 
     private void setupVault()

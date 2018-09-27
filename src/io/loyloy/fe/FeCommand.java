@@ -187,7 +187,7 @@ public class FeCommand implements CommandExecutor
     {
         String operator = argument.substring( 0, 1 );
 
-        argument = argument.substring( 1, argument.length() );
+        argument = argument.substring( 1 );
 
         String reverse;
 

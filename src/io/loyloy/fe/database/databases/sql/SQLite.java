@@ -1,4 +1,4 @@
-package io.loyloy.fe.database.databases;
+package io.loyloy.fe.database.databases.sql;
 
 import org.bukkit.configuration.ConfigurationSection;
 import io.loyloy.fe.Fe;
@@ -7,13 +7,13 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
-public class SQLiteDB extends SQLDB
+public class SQLite extends SQLFunctions
 {
     private final Fe plugin;
 
-    public SQLiteDB( Fe plugin )
+    public SQLite( Fe plugin )
     {
-        super( plugin, false );
+        super( plugin );
 
         this.plugin = plugin;
     }

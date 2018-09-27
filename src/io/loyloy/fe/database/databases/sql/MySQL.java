@@ -1,4 +1,4 @@
-package io.loyloy.fe.database.databases;
+package io.loyloy.fe.database.databases.sql;
 
 import org.bukkit.configuration.ConfigurationSection;
 import io.loyloy.fe.Fe;
@@ -6,11 +6,11 @@ import io.loyloy.fe.Fe;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
-public class MySQLDB extends SQLDB
+public class MySQL extends SQLFunctions
 {
-    public MySQLDB( Fe plugin )
+    public MySQL( Fe plugin )
     {
-        super( plugin, true );
+        super( plugin );
     }
 
     protected Connection getNewConnection()

@@ -3,33 +3,27 @@ package io.loyloy.fe.database;
 import io.loyloy.fe.API;
 import io.loyloy.fe.Fe;
 
+import java.time.Instant;
+
 public class Account
 {
     private final Fe plugin;
-
     private String name;
-
     private final String uuid;
-
     private final API api;
-
     private final Database database;
-
     private Double money;
+    private long lastAccess;
 
     public Account( Fe plugin, String name, String uuid, Database database )
     {
         this.plugin = plugin;
-
         this.name = name;
-
         this.uuid = uuid;
-
         this.api = plugin.getAPI();
-
         this.database = database;
-
         this.money = null;
+        updateLastAccess();
     }
 
     public String getName()
@@ -56,6 +50,8 @@ public class Account
 
     public Double getMoney()
     {
+        updateLastAccess();
+
         if( money != null )
         {
             return money;
@@ -83,6 +79,8 @@ public class Account
 
     public void setMoney( double money )
     {
+        updateLastAccess();
+
         Double currentMoney = getMoney();
 
         if( currentMoney != null && currentMoney == money )
@@ -149,5 +147,15 @@ public class Account
         Account account = ( Account ) object;
 
         return account.getName().equals( getName() );
+    }
+
+    public long getLastAccess()
+    {
+        return lastAccess;
+    }
+
+    private void updateLastAccess()
+    {
+        lastAccess = Instant.now().getEpochSecond();
     }
 }

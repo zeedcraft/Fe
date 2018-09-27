@@ -3,8 +3,6 @@ package io.loyloy.fe.database;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import io.loyloy.fe.Fe;
-import io.loyloy.fe.Phrase;
-import io.loyloy.fe.UUIDFetcher;
 
 import java.util.*;
 
@@ -12,12 +10,11 @@ public abstract class Database
 {
     private final Fe plugin;
     private final Set<Account> cachedAccounts;
-    protected boolean cacheAccounts;
+    private boolean cacheAccounts;
 
     public Database( Fe plugin )
     {
         this.plugin = plugin;
-
         this.cachedAccounts = new HashSet<>();
     }
 
@@ -25,9 +22,15 @@ public abstract class Database
     {
         this.cacheAccounts = plugin.getAPI().getCacheAccounts();
 
+        if( cacheAccounts )
+        {
+            plugin.getServer().getScheduler().scheduleSyncRepeatingTask( plugin, new CacheCleanRunnable( this ), 36000L, 36000L ); // 30 mins
+        }
+
         return false;
     }
 
+    //This is really weird and needs to be looked at
     public List<Account> getTopAccounts( int size )
     {
         List<Account> topAccounts = loadTopAccounts( size * 2 );
@@ -41,13 +44,7 @@ public abstract class Database
 
             List<Account> cachedTopAccounts = new ArrayList<>( cachedAccounts );
 
-            Collections.sort( cachedTopAccounts, new Comparator<Account>()
-            {
-                public int compare( Account account1, Account account2 )
-                {
-                    return ( int ) ( account2.getMoney() - account1.getMoney() );
-                }
-            } );
+            cachedTopAccounts.sort( ( account1, account2 ) -> (int) (account2.getMoney() - account1.getMoney()) );
 
             if( cachedAccounts.size() > size )
             {
@@ -57,13 +54,7 @@ public abstract class Database
             topAccounts.addAll( cachedTopAccounts );
         }
 
-        Collections.sort( topAccounts, new Comparator<Account>()
-        {
-            public int compare( Account account1, Account account2 )
-            {
-                return ( int ) ( account2.getMoney() - account1.getMoney() );
-            }
-        } );
+        topAccounts.sort( ( account1, account2 ) -> (int) (account2.getMoney() - account1.getMoney()) );
 
         if( topAccounts.size() > size )
         {
@@ -97,79 +88,7 @@ public abstract class Database
 
     public void removeAllAccounts()
     {
-        for( Account account : new HashSet<>( cachedAccounts ) )
-        {
-            cachedAccounts.remove( account );
-        }
-    }
-
-    protected boolean convertToUUID()
-    {
-        if( !plugin.getServer().getOnlineMode() )
-        {
-            //Disable plugin?
-        }
-
-        plugin.log( Phrase.STARTING_UUID_CONVERSION );
-
-        List<Account> accounts = getAccounts();
-
-        Map<String, Double> accountMonies = new HashMap<String, Double>();
-
-        for( Account account : accounts )
-        {
-            accountMonies.put( account.getName(), account.getMoney() );
-        }
-
-        List<String> names = new ArrayList<>();
-
-        for( Account account : accounts )
-        {
-            names.add( account.getName() );
-        }
-
-        UUIDFetcher fetcher = new UUIDFetcher( names );
-
-        Map<String, UUID> response;
-
-        try
-        {
-            response = fetcher.call();
-
-            removeAllAccounts();
-
-            for( String name : response.keySet() )
-            {
-                for( String accountName : new HashMap<>( accountMonies ).keySet() )
-                {
-                    if( accountName.equalsIgnoreCase( name ) )
-                    {
-                        saveAccount( name, response.get( name ).toString(), accountMonies.get( accountName ) );
-
-                        accountMonies.remove( accountName );
-                    }
-                }
-            }
-
-            for( String accountName : accountMonies.keySet() )
-            {
-                saveAccount( accountName, null, accountMonies.get( accountName ) );
-            }
-        }
-        catch( Exception e )
-        {
-            e.printStackTrace();
-
-            plugin.log( Phrase.UUID_CONVERSION_FAILED );
-
-            plugin.getServer().getPluginManager().disablePlugin( plugin );
-
-            return false;
-        }
-
-        plugin.log( Phrase.UUID_CONVERSION_SUCCEEDED );
-
-        return true;
+        cachedAccounts.clear();
     }
 
     public void close()
@@ -290,6 +209,11 @@ public abstract class Database
         }
 
         return null;
+    }
+
+    public Set<Account> getCachedAccounts()
+    {
+        return cachedAccounts;
     }
 
     public boolean removeCachedAccount( Account account )
