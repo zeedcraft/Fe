@@ -3,6 +3,8 @@ package io.loyloy.fe.listeners;
 import io.loyloy.fe.Fe;
 import io.loyloy.fe.database.Account;
 import io.loyloy.fe.database.Database;
+
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -24,24 +26,30 @@ public class FePlayerListener implements Listener
     @EventHandler( priority = EventPriority.LOWEST )
     public void onPlayerLogin( PlayerLoginEvent event )
     {
-        Player player = event.getPlayer();
-        plugin.getAPI().updateAccount( player.getName(), player.getUniqueId().toString() );
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> 
+        {
+        	Player player = event.getPlayer();
+        	plugin.getAPI().updateAccount( player.getName(), player.getUniqueId().toString() );
+        });
     }
 
     @EventHandler
     public void onPlayerQuit( PlayerQuitEvent event )
     {
-        Database database = plugin.getFeDatabase();
-
-        Player player = event.getPlayer();
-
-        Account account = database.getCachedAccount( player.getName(), player.getUniqueId().toString() );
-
-        if( account != null )
+    	Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> 
         {
-            account.save( account.getMoney() );
-
-            database.removeCachedAccount( account );
-        }
+	    	Database database = plugin.getFeDatabase();
+	
+	        Player player = event.getPlayer();
+	
+	        Account account = database.getCachedAccount( player.getName(), player.getUniqueId().toString() );
+	
+	        if( account != null )
+	        {
+	            account.save( account.getMoney() );
+	
+	            database.removeCachedAccount( account );
+	        }
+        });
     }
 }

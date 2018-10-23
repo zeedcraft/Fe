@@ -1,5 +1,6 @@
 package io.loyloy.fe;
 
+import io.loyloy.fe.command.FeCommandCompleter;
 import io.loyloy.fe.database.Account;
 import io.loyloy.fe.database.Database;
 import io.loyloy.fe.database.databases.sql.MySQL;
@@ -72,7 +73,9 @@ public class Fe extends JavaPlugin
             return;
         }
 
-        getCommand( "fe" ).setExecutor( new FeCommand( this ) );
+        FeCommand feCommand = new FeCommand( this );
+        getCommand( "fe" ).setExecutor( feCommand );
+        getCommand( "fe" ).setTabCompleter( new FeCommandCompleter(this, feCommand) );
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents( new FePlayerListener( this ), this );
