@@ -29,7 +29,7 @@ public class MySQL extends SQLFunctions
         {
             Class.forName( "com.mysql.jdbc.Driver" );
 
-            String url = "jdbc:mysql://" + config.getString( "host" ) + ":" + config.getString( "port" ) + "/" + config.getString( "database" );
+            String url = "jdbc:mysql://" + config.getString( "host" ) + ":" + config.getString( "port" ) + "/" + config.getString( "database" ) + "?autoReconnect=true";
 
             return DriverManager.getConnection( url, config.getString( "user" ), config.getString( "password" ) );
         }

@@ -1,6 +1,6 @@
 name: Fe
 main: io.loyloy.fe.Fe
-version: 0.9
+version: 0.9.1
 load: startup
 
 commands:
