@@ -105,7 +105,7 @@ public enum Phrase
             name = name.replaceFirst( "_", "." );
         }
 
-        return name.toLowerCase();
+        return name;
     }
 
     public String parse( String... params )

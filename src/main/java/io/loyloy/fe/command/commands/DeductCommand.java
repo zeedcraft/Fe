@@ -1,24 +1,26 @@
 package io.loyloy.fe.command.commands;
 
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
 import io.loyloy.fe.Fe;
 import io.loyloy.fe.Phrase;
 import io.loyloy.fe.command.CommandType;
 import io.loyloy.fe.command.SubCommand;
 import io.loyloy.fe.database.Account;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
-public class SetCommand extends SubCommand
+public class DeductCommand extends SubCommand
 {
     private final Fe plugin;
 
-    public SetCommand( Fe plugin )
+    public DeductCommand( Fe plugin )
     {
-        super( "set", "fe.set", "set [name] [amount]", Phrase.COMMAND_SET, CommandType.CONSOLE );
+        super( "deduct", "fe.deduct", "deduct [name] [amount]", Phrase.COMMAND_DEDUCT, CommandType.CONSOLE );
 
         this.plugin = plugin;
     }
 
+    @SuppressWarnings( "deprecation" )
     public boolean onCommand( CommandSender sender, Command cmd, String commandLabel, String[] args )
     {
         if( args.length < 2 )
@@ -45,18 +47,19 @@ public class SetCommand extends SubCommand
             return true;
         }
 
-        if( !victim.canReceive( money ) )
-        {
-            Phrase.MAX_BALANCE_REACHED.sendWithPrefix( sender, victim.getName() );
-            return true;
-        }
-
         String formattedMoney = plugin.getAPI().format( money );
 
-        victim.setMoney( money );
+        victim.withdraw( money );
 
-        Phrase.PLAYER_SET_MONEY.sendWithPrefix( sender, victim.getName(), formattedMoney );
+        Phrase.PLAYER_DEDUCT_MONEY.sendWithPrefix( sender, formattedMoney, victim.getName() );
+
+        Player receiverPlayer = plugin.getServer().getPlayerExact( victim.getName() );
+
+        if( receiverPlayer != null )
+        {
+            Phrase.PLAYER_DEDUCTED_MONEY.sendWithPrefix( receiverPlayer, formattedMoney, sender.getName() );
+        }
 
         return true;
     }
-}
+}	

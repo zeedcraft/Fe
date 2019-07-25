@@ -1,11 +1,11 @@
 package io.loyloy.fe.command.commands;
 
+import io.loyloy.fe.Fe;
 import io.loyloy.fe.Phrase;
+import io.loyloy.fe.command.CommandType;
 import io.loyloy.fe.command.SubCommand;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import io.loyloy.fe.Fe;
-import io.loyloy.fe.command.CommandType;
 
 public class RemoveCommand extends SubCommand
 {

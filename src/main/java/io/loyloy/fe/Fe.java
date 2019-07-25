@@ -5,7 +5,9 @@ import io.loyloy.fe.database.Account;
 import io.loyloy.fe.database.Database;
 import io.loyloy.fe.database.databases.sql.MySQL;
 import io.loyloy.fe.database.databases.sql.SQLite;
+import io.loyloy.fe.listeners.FePlayerListener;
 import net.milkbowl.vault.economy.Economy;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -13,11 +15,12 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
-import io.loyloy.fe.listeners.FePlayerListener;
 
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
+
+// Java Imports
 
 public class Fe extends JavaPlugin
 {
@@ -175,7 +178,8 @@ public class Fe extends JavaPlugin
 
         if( !phrasesFile.exists() )
         {
-            return;
+            phrasesFile.getParentFile().mkdirs();
+            saveResource("phrases.yml", false);
         }
 
         YamlConfiguration phrasesConfig = YamlConfiguration.loadConfiguration( phrasesFile );
@@ -188,6 +192,7 @@ public class Fe extends JavaPlugin
 
             if( phraseMessage == null )
             {
+                Bukkit.getLogger().warning("[Fe] No message found for \"" + phraseConfigName + "\", using default value!");
                 phraseMessage = phrase.parse();
             }
 

@@ -1,8 +1,8 @@
 package io.loyloy.fe.command;
 
+import io.loyloy.fe.Phrase;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import io.loyloy.fe.Phrase;
 
 public abstract class SubCommand
 {

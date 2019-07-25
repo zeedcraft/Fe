@@ -1,13 +1,13 @@
 package io.loyloy.fe.command.commands;
 
+import io.loyloy.fe.Fe;
+import io.loyloy.fe.FeCommand;
 import io.loyloy.fe.Phrase;
+import io.loyloy.fe.command.CommandType;
 import io.loyloy.fe.command.SubCommand;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import io.loyloy.fe.Fe;
-import io.loyloy.fe.FeCommand;
-import io.loyloy.fe.command.CommandType;
 
 public class HelpCommand extends SubCommand
 {
