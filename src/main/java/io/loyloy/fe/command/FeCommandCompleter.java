@@ -1,16 +1,15 @@
 package io.loyloy.fe.command;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
+import io.loyloy.fe.Fe;
+import io.loyloy.fe.FeCommand;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.util.StringUtil;
 
-import io.loyloy.fe.Fe;
-import io.loyloy.fe.FeCommand;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class FeCommandCompleter implements TabCompleter 
 {

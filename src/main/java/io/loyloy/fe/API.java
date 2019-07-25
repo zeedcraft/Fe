@@ -178,7 +178,7 @@ public class API
 
         formattedAmount = formattedAmount.replace( ",", "." );
 
-        return Double.valueOf( formattedAmount );
+        return Double.parseDouble(formattedAmount);
     }
 
     public String formatNoColor( Account account )

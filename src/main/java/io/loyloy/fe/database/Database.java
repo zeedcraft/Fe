@@ -1,8 +1,8 @@
 package io.loyloy.fe.database;
 
+import io.loyloy.fe.Fe;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import io.loyloy.fe.Fe;
 
 import java.util.*;
 

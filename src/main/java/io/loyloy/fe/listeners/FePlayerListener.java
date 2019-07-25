@@ -3,7 +3,6 @@ package io.loyloy.fe.listeners;
 import io.loyloy.fe.Fe;
 import io.loyloy.fe.database.Account;
 import io.loyloy.fe.database.Database;
-
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;

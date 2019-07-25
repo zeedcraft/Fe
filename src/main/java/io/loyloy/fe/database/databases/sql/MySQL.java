@@ -1,7 +1,7 @@
 package io.loyloy.fe.database.databases.sql;
 
-import org.bukkit.configuration.ConfigurationSection;
 import io.loyloy.fe.Fe;
+import org.bukkit.configuration.ConfigurationSection;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
