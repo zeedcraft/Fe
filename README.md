@@ -1,4 +1,3 @@
-Fe, the simple economy plugin
+Fe Spanish, the simple economy plugin
 =============
-
-Welcome to the GitHub repository for Fe! If you'd like to contribute code, you can make a pull request.
+Esto es una copia del plugin original Pero traducida al Español
