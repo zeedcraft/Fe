@@ -14,7 +14,7 @@ public enum Phrase
     YOU_HAVE( "Tu tienes $1" ),
     HELP( "Fe ayuda" ),
     HELP_ARGUMENTS( "$1 Necesario, $2 Opcional" ),
-    RICH( "Rich List" ),
+    RICH( "Lista de Millonarios" ),
     STARTING_UUID_CONVERSION( "Inicio de conversión de UUID." ),
     UUID_CONVERSION_FAILED( "La conversión de UUID falló, deshabilitando Fe!" ),
     UUID_CONVERSION_SUCCEEDED( "¡La conversión de UUID ha tenido éxito!" ),
